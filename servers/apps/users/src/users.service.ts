@@ -1,11 +1,13 @@
+import { TokenSender } from './utils/sendToken'
 import { LoginDto, RegisterDto, ActivationDto } from './dto/users.dto'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import * as bcrypt from 'bcrypt'
 import { EmailService } from './email/email.service'
+import { LoginResponse } from './types/users.types'
 
 interface UserData {
   name: string
@@ -68,17 +70,43 @@ export class UsersService {
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto
-    const user = {
-      email,
-      password
+    const user = await this.prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (user && (await this.comparePassword(password, user.password))) {
+      const tokenSender = new TokenSender(this.configService, this.jwtService)
+      return tokenSender.sendToken(user)
     }
-    return user
+    return {
+      user: null,
+      refreshToken: null,
+      accessToken: null,
+      error: { message: 'Invalid email or password' }
+    }
+  }
+
+  comparePassword(password: string, userPassword: string) {
+    return bcrypt.compare(password, userPassword)
+  }
+
+  async getLoggedInUser(req: Request) {
+    const user = req.user
+    const accessToken = req.accessToken
+    const refreshToken = req.refreshToken
+    return { user, accessToken, refreshToken }
+  }
+
+  async logout(req: Request) {
+    req.user = null
+    req.refreshToken = null
+    req.accessToken = null
+    return { message: 'log out successfully!' }
   }
 
   async getUsers() {
     return await this.prisma.user.findMany({})
   }
-
   async createActivationToken(user: UserData) {
     const activationCode = Math.floor(1000 + Math.random() * 9000).toString()
 

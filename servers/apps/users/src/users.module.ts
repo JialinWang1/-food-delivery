@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { UsersController } from './users.controller'
 import { UsersService } from './users.service'
 import { GraphQLModule } from '@nestjs/graphql'
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo'
@@ -23,7 +22,7 @@ import { EmailService } from './email/email.service'
     }),
     EmailModule
   ],
-  controllers: [UsersController],
+  controllers: [],
   providers: [UsersService, ConfigService, JwtService, PrismaService, UserResolver, EmailService]
 })
 export class UsersModule {}

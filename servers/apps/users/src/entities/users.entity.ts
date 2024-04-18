@@ -30,6 +30,9 @@ export class User {
   @Field()
   password: string
 
+  @Field({ nullable: true })
+  address: string
+
   @Field(() => Avatars, { nullable: true })
   avatar: Avatars | null
 
